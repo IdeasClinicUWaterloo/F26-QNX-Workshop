@@ -63,8 +63,8 @@ int main(void) {
 
         MAX30102_heartrateAndOxygenSaturation(/**SPO2=*/&SPO2, /**SPO2Valid=*/&SPO2Valid, /**heartRate=*/&heartRate, /**heartRateValid=*/&heartRateValid);
 
-        if(heartRateValid) send_pulse(EVENT_HEARTRATE, heartRate);
-        if(SPO2Valid) send_pulse(EVENT_SPO2, SPO2);
+        send_pulse(EVENT_HEARTRATE, heartRate);
+        send_pulse(EVENT_SPO2, SPO2);
 
         usleep(1000);
     }
