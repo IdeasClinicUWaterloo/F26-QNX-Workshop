@@ -41,14 +41,15 @@ int main(void) {
     }
 
     // Configure sensor 
-MAX30102_sensorConfiguration(
-    /*ledBrightness=*/50,
-    /*sampleAverage=*/MAX30102_SAMPLEAVG_4,
-    /*ledMode=*/MAX30102_MODE_RED_IR,
-    /*sampleRate=*/MAX30102_SAMPLERATE_100,
-    /*pulseWidth=*/MAX30102_PULSEWIDTH_411,
-    /*adcRange=*/MAX30102_ADCRANGE_16384
-);
+    MAX30102_sensorConfiguration(
+        /*ledBrightness=*/50,
+        /*sampleAverage=*/MAX30102_SAMPLEAVG_1,
+        /*ledMode=*/MAX30102_MODE_RED_IR,
+        /*sampleRate=*/MAX30102_SAMPLERATE_200,
+        /*pulseWidth=*/MAX30102_PULSEWIDTH_411,
+        /*adcRange=*/MAX30102_ADCRANGE_16384
+    );
+    
     /*if(sensor_config_resp) {
         send_pulse(EVENT_SENSOR_CONFIGURED, 1);
     } else{
@@ -61,25 +62,19 @@ MAX30102_sensorConfiguration(
 
     for(;;){
         int32_t SPO2; //SPO2
-        bool SPO2Valid; //Flag to display if SPO2 calculation is valid
+        int8_t SPO2Valid; //Flag to display if SPO2 calculation is valid
         int32_t heartRate; //Heart-rate
-        bool heartRateValid; //Flag to display if heart-rate calculation is valid 
+        int8_t heartRateValid; //Flag to display if heart-rate calculation is valid 
 
-        MAX30102_heartrateAndOxygenSaturation(/**SPO2=*/&SPO2, /**SPO2Valid=*/&SPO2Valid, /**heartRate=*/&heartRate, /**heartRateValid=*/&heartRateValid);
+        MAX30102_heartrateAndOxygenSaturation(/**SPO2=*/&SPO2, 
+            /**SPO2Valid=*/&SPO2Valid, 
+            /**heartRate=*/&heartRate, 
+            /**heartRateValid=*/&heartRateValid);
         
         /*send_pulse(EVENT_HEARTRATE, heartRate);
         send_pulse(EVENT_SPO2, SPO2);*/
 
-        if(heartRateValid && SPO2Valid){
-            printf("heartrate=%d, ", heartRate);
-            printf("spo2=%d", SPO2);
-        } 
-
-        if(!heartRateValid || !SPO2Valid){
-            printf("Invalid measurement. Please press your finger firmly on the sensor.");
-        } 
-
-        printf("\n");
+        printf("heartrate=%d, spo2=%d\n", heartRate, SPO2);
 
         usleep(100);
     }

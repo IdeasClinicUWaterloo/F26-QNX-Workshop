@@ -6,9 +6,9 @@
  * 
  *              The original implementation was designed for the Arduino platform.
  *              It has been ported, refactored, and adapted for 
- *              the QNX Neutrino RTOS running on a Raspberry Pi.
+ *              the QNX running on a Raspberry Pi.
  * 
- * @platform    QNX Neutrino RTOS (Raspberry Pi)
+ * @platform    QNX (Raspberry Pi)
  * @original    Arduino Architecture
  *******************************************************************************/
 
@@ -16,18 +16,17 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/neutrino.h>
-#include <max30102_hr.h>
 #include <rpi_i2c.h>
 #include <rpi_gpio.h>
-#include <math.h>
+#include <max30102_dsp.h>
 
 #define min(x,y) ((x) < (y) ? (x) : (y))
-#define FreqS 25    //sampling frequency
+#define FreqS 200    //sampling frequency
 #define BUFFER_SIZE (FreqS * 4) 
 #define MA4_SIZE 4 // DONOT CHANGE
 #define MAX30102_GPIO_INT_PIN GPIO17
 #define MIN_CONSECT_SAMPLES 3
-
+#define IR_THRESHOLD 40000
 typedef struct {
     uint32_t red[MAX30102_SENSE_BUF_SIZE];
     uint32_t IR[MAX30102_SENSE_BUF_SIZE];
@@ -61,7 +60,7 @@ uint8_t _activeLEDs;
 static int chid;  // Channel ID
 static int coid;  // Connection ID
 
-MAX30102_t max30102_heartbeat = {0};
+static IIR_4th_t bpf[2] = {0};
 
 bool writeReg(uint8_t reg, const uint8_t *pBuf, uint8_t size){
     if (pBuf == NULL || size == 0) {
@@ -167,6 +166,8 @@ bool MAX30102_enablePPGInterrupt(void){
 }
 
 bool MAX30102_begin(void){
+    init_bpf(bpf);
+
     if (!MAX30102_softReset()) {
         perror("Error: failed to reset sensor.\n");
         return 0;
@@ -427,8 +428,20 @@ void maxim_heart_rate_and_oxygen_saturation(uint32_t *pun_ir_buffer, int32_t n_i
   un_ir_mean =un_ir_mean/n_ir_buffer_length ;
     
   // remove DC and invert signal so that we can use peak detector as valley detector
-  for (k=0 ; k<n_ir_buffer_length ; k++ )  
-    an_x[k] = -1*(pun_ir_buffer[k] - un_ir_mean) ; 
+  for (k=0 ; k<n_ir_buffer_length ; k++ ){
+
+    //an_x[k] = -1*(pun_ir_buffer[k] - un_ir_mean) ;
+
+    /***************************************/
+    // TEST DSP (Bandpass filter 0.8-6 Hz)
+    /***************************************/
+
+    int32_t ir_ac = pun_ir_buffer[k] - un_ir_mean;
+    int32_t filtered = update_bpf(&bpf, ir_ac);
+    an_x[k] = -filtered;
+
+    /***************************************/
+  }
     
   // 4 pt Moving Average
   for(k=0; k< BUFFER_SIZE-MA4_SIZE; k++){
@@ -446,6 +459,18 @@ void maxim_heart_rate_and_oxygen_saturation(uint32_t *pun_ir_buffer, int32_t n_i
   for ( k=0 ; k<15;k++) an_ir_valley_locs[k]=0;
   // since we flipped signal, we use peak detector as valley detector
   maxim_find_peaks( an_ir_valley_locs, &n_npks, an_x, BUFFER_SIZE, n_th1, 4, 15 );//peak_height, peak_distance, max_num_peaks 
+
+    /***************************************/
+    // TEST DSP (PRINT)
+    /***************************************/
+    int peak_idx = 0;
+    for (int k = 0; k < n_ir_buffer_length; k++) {
+        bool is_peak = (peak_idx < n_npks && an_ir_valley_locs[peak_idx] == k);
+        printf("IR: %d, peak: %s\n",an_x[k],is_peak ? "yes" : "no");
+        if (is_peak) peak_idx++;
+    }
+    /***************************************/
+
   n_peak_interval_sum =0;
   if (n_npks>=2){
     for (k=1; k<n_npks; k++) n_peak_interval_sum += (an_ir_valley_locs[k] -an_ir_valley_locs[k -1] ) ;
@@ -637,20 +662,19 @@ void maxim_sort_indices_descend(  int32_t  *pn_x, int32_t *pn_indx, int32_t n_si
 
 void MAX30102_heartrateAndOxygenSaturation(
     int32_t *SPO2,
-    bool *SPO2Valid,
+    int8_t *SPO2Valid,
     int32_t *heartRate,
-    bool *heartRateValid
+    int8_t *heartRateValid
 ) {
     if (!SPO2 || !SPO2Valid || !heartRate || !heartRateValid)
         return;
 
     *SPO2 = -999;
-    *SPO2Valid = false;
+    *SPO2Valid = 0;
     *heartRate = -999;
-    *heartRateValid = false;
+    *heartRateValid = 0;
 
     int32_t irBuffer[BUFFER_SIZE];
-    uint32_t irMaximBuffer[BUFFER_SIZE];
     uint32_t redBuffer[BUFFER_SIZE];
 
     int sample_count = 0;
@@ -678,7 +702,7 @@ void MAX30102_heartrateAndOxygenSaturation(
                 }
 
                 sample_count = 0;
-                init_max3012_heartrate(&max30102_heartbeat);
+                init_bpf(&bpf);
 
                 continue;
             }
@@ -687,48 +711,30 @@ void MAX30102_heartrateAndOxygenSaturation(
             invalid_samples_count = 0;
 
             // Store valid sample
-            irBuffer[sample_count] = (int32_t)ir;
-            irMaximBuffer[sample_count] = ir;
+            irBuffer[sample_count] = ir;
             redBuffer[sample_count] = red;
 
             sample_count++;
         }
 
-        if (sample_count == BUFFER_SIZE)
-            break;
+        if (sample_count == BUFFER_SIZE) break;
 
         if (!MAX30102_waitForInterrupt()) {
-            init_max3012_heartrate(&max30102_heartbeat);
             return;
         }
 
         if (!MAX30102_getNewData()) {
-            init_max3012_heartrate(&max30102_heartbeat);
             return;
         }
     }
 
-    // Maxim algorithm (SpO2)
-    int8_t spo2_valid = 0;
-    int8_t maxim_hr_valid = 0;
-    int32_t maxim_hr = -999;
-
     maxim_heart_rate_and_oxygen_saturation(
-        irMaximBuffer,
+        irBuffer,
         BUFFER_SIZE,
         redBuffer,
         SPO2,
-        &spo2_valid,
-        &maxim_hr,
-        &maxim_hr_valid
+        &SPO2Valid,
+        heartRate,
+        heartRateValid
     );
-
-    *SPO2Valid = spo2_valid;
-
-    max3012_heartrate(&max30102_heartbeat, irBuffer);
-    double bpm = max30102_heartbeat.heartrate;
-    if (isfinite(bpm) && bpm > 0) {
-        *heartRate = (int32_t)(bpm + 0.5);
-        *heartRateValid = true;
-    }
 }

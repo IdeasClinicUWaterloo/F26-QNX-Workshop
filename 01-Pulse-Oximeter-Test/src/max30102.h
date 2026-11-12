@@ -62,8 +62,8 @@
 #define MAX30102_PULSEWIDTH_411  3
 
 //Particle sensing configuration(Register address 0x0A)
-//adcRange(Table 5. SpO2 ADC Range Control)
 
+//adcRange(Table 5. SpO2 ADC Range Control)
 #define MAX30102_ADCRANGE_2048   0
 #define MAX30102_ADCRANGE_4096   1
 #define MAX30102_ADCRANGE_8192   2
@@ -92,9 +92,9 @@ bool MAX30102_sensorConfiguration(
     
 void MAX30102_heartrateAndOxygenSaturation(
     int32_t *SPO2,
-    bool *SPO2Valid,
+    int8_t *SPO2Valid,
     int32_t *heartRate,
-    bool *heartRateValid
+    int8_t *heartRateValid
 );
 
 #endif
