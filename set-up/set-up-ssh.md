@@ -93,5 +93,3 @@ If the connection is successful, you should see:
 ```text
 Welcome to QNX 8.0!
 ```
-
-
