@@ -4,7 +4,9 @@
 
 Please build the following circuit for this workshop.
 
-<img src="./assets/circuit-diagram.png" alt="circuit-diagram.png" style="width: 50%; height: auto;display: block; margin: 0 auto;">
+<p align="center">
+  <img src="./assets/circuit-diagram.png" alt="circuit-diagram.png" width="50%">
+</p>
 
 
 
