@@ -1,4 +1,4 @@
-# Download QNX Sofware Development Platform (SDP) 8.0
+# Download QNX Software Development Platform (SDP) 8.0
 
 In order to develop and compile C programs for QNX, you first need to download the **QNX Software Development Platform**. 
 
@@ -80,7 +80,7 @@ Open the `Active Installation` dropdown and add a new installation.
 
 - Click <code>Next</code> and follow all installation prompts on the screen.
 
-### 4.3. Verify your download
+### 4.4. Verify your download
 Go back to the home screen of the **QNX Software Center**. 
 
 You should see the package name `qnx800` in the `Active Installation` dropdown if it was installed correctly.
