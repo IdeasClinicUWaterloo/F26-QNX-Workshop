@@ -36,9 +36,9 @@ The following sections will guide you through setting up each terminal.
 ## 4. Compile Code for QNX
 
 ### 4.1. Configure the Raspberry Pi IP Address
-Open the .env file located in this project's directory and replace the value of RPI_IP_ADDR with your Raspberry Pi's IP address that is written on its case.
+Open the `.env` file located in this project's directory and replace the value of `RPI_IP_ADDR` with your Raspberry Pi's IP address that is written on its case.
 
-the file should look like: 
+The file should look like: 
 
 ```env
 RPI_IP_ADDR=<your-rpi-ip-address>
