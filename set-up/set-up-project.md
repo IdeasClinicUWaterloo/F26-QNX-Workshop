@@ -133,8 +133,6 @@ For this workshop, the default QNX username and password are:
 
 Connect your computer to the `UW-Lab` Wi-Fi network.
 
-**Password:** `LeZPjTCXW89hufgX`
-
 #### Option 2: Ethernet Connection (If Wi-Fi Is Not Working)
 
 If you cannot connect to the Raspberry Pi through Wi-Fi, you can use an Ethernet cable to establish a direct connection between your computer and the Raspberry Pi.
