@@ -1,4 +1,24 @@
 # Set Up Your Project
+## Overview
+
+Use the links below to jump to each section:
+
+- [1. Building the Circuit](#1-building-the-circuit)
+- [2. Download Project Files](#2-download-project-files)
+- [3. Setting Up the Development Environment](#3-setting-up-the-development-environment)
+- [4. Compile Code for QNX](#4-compile-code-for-qnx)
+  - [4.1. Configure the Raspberry Pi IP Address](#41-configure-the-raspberry-pi-ip-address)
+  - [4.2. Open Development Terminal](#42-open-development-terminal)
+  - [4.3. Compile Your Code](#43-compile-your-code)
+  - [4.4. Deploy Your Code to the Raspberry Pi](#44-deploy-your-code-to-the-raspberry-pi)
+- [5. SSH Into Your Raspberry Pi](#5-ssh-into-your-raspberry-pi)
+  - [5.1. Establish a Network Connection](#51-establish-a-network-connection)
+  - [5.2. Connect to Raspberry Pi via SSH](#52-connect-to-raspberry-pi-via-ssh)
+  - [5.3. Switch to Root User](#53-switch-to-root-user)
+  - [5.4. Run the Programs](#54-run-the-programs)
+  - [5.5. Stop the Programs](#55-stop-the-programs)
+- [Making and Testing Code Changes](#making-and-testing-code-changes)
+
 
 ## 1. Building the Circuit
 
@@ -52,7 +72,13 @@ Open a **terminal** on your computer and navigate to this project's directory. I
 
 ### 4.3 Compile your code
 
-Run the following command to build the project:
+First, verify that the QNX compiler is available:
+
+```bash
+qcc -V
+```
+
+Then build the project:
 
 ```bash
 make
@@ -204,7 +230,33 @@ root
 
 **Note:** Keep this terminal open throughout the workshop. You will use it to run and test your programs.
 
+### 5.4. Run the programs
+After switching to the root user, navigate to the directory where the deployed programs are located:
 
+```bash
+cd /home/qnxuser
+```
+
+Start the alarm manager in the background:
+
+```bash
+./alarm-manager &
+```
+
+Then start the pulse oximeter:
+
+```bash
+./pulse-oximeter
+```
+
+### 5.5. Stop the programs
+
+To stop both programs manually, run:
+
+```bash
+slay pulse-oximeter
+slay alarm-manager
+```
 
 ## Making and Testing Code Changes
 
@@ -213,7 +265,17 @@ Throughout the workshop, you will repeat the following workflow whenever you mod
 1. **Edit:** Make changes to the source code in the `src` folder.
 2. **Compile:** Run `make` in your development terminal.
 3. **Deploy:** Run `deploy.bat` or `deploy.sh` to transfer the updated program.
-4. **Run:** Switch to your Raspberry Pi terminal and execute the program.
-5. **Test:** Observe the output and verify that your changes work as expected.
+4. **Run:** Switch to your Raspberry Pi terminal and run:
 
+   ```bash
+   ./alarm-manager &
+   ./pulse-oximeter
+   ```
+6. **Test:** Observe the output and verify that your changes work as expected.
+7. **Stop:** Press `Ctrl + C` to stop the pulse oximeter. If the alarm manager is still running, run:
+
+   ```bash
+   slay alarm-manager
+   ```
+   
 **Remember:** You do not need to reconnect to the Raspberry Pi every time you make a change. Keep both terminals open and switch between them as needed.
